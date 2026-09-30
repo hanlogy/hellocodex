@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hello Codex</title>
+<meta name="description" content="Hello Codex lives in your Mac’s menu bar and shows how much of your Codex weekly limit is left, how the week is going, and whether it will last until the reset.">
+<link rel="icon" type="image/png" href="images/app-icon.png">
+<link rel="apple-touch-icon" href="images/app-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Hanken+Grotesk:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one column, 1080 wide. A desktop strip with the real menu bar item
+   and popover opens the page; the full window follows, then the three numbers
+   and a few points. */
+:root {
+  --ground: #f3f4f6;      /* page, a cool off-white */
+  --panel: #ffffff;       /* the app's own window background */
+  --ink: #1d1d1f;         /* the app's text colour */
+  --muted: #666a73;
+  --line: #dfe1e6;
+  --accent: #e8711c;      /* the orange bar in the app icon */
+  --good: #1f9d45;        /* the app's "lasts to reset" green */
+  --desk-a: #d9dde4;      /* desktop behind the menu bar */
+  --desk-b: #eceef2;
+  --menubar: rgba(255, 255, 255, 0.72);
+  --menubar-ink: #1d1d1f;
+  --shadow: rgba(24, 28, 38, 0.16);
+  --show-light: block;
+  --show-dark: none;
+
+  --display: "Bricolage Grotesque", "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --body: "Hanken Grotesk", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --data: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #111215; --panel: #1c1c1e; --ink: #f2f2f4; --muted: #9b9ea7; --line: #2b2d33;
+    --accent: #ff8a33; --good: #34c759; --desk-a: #23262d; --desk-b: #171a1f;
+    --menubar: rgba(30, 31, 36, 0.72); --menubar-ink: #f2f2f4; --shadow: rgba(0, 0, 0, 0.5);
+    --show-light: none; --show-dark: block; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #111215; --panel: #1c1c1e; --ink: #f2f2f4; --muted: #9b9ea7; --line: #2b2d33;
+  --accent: #ff8a33; --good: #34c759; --desk-a: #23262d; --desk-b: #171a1f;
+  --menubar: rgba(30, 31, 36, 0.72); --menubar-ink: #f2f2f4; --shadow: rgba(0, 0, 0, 0.5);
+  --show-light: none; --show-dark: block; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font: 400 1.0625rem/1.6 var(--body);
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1080px; margin: 0 auto; padding-inline: 24px; }
+@media (max-width: 480px) { .wrap { padding-inline: 16px; } }
+
+.shot-light { display: var(--show-light); }
+.shot-dark { display: var(--show-dark); }
+img { max-width: 100%; height: auto; }
+
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; letter-spacing: -0.02em; }
+p { margin: 0; }
+.data { font-family: var(--data); font-variant-numeric: tabular-nums; }
+.eyebrow {
+  font: 500 0.75rem/1 var(--data);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+
+/* Top bar */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 22px; }
+.brand { display: flex; align-items: center; gap: 10px; font: 700 1.05rem/1 var(--display); text-decoration: none; }
+.brand img { width: 30px; height: 30px; border-radius: 7px; }
+.top nav { display: flex; gap: 22px; font-size: 0.95rem; color: var(--muted); }
+.top nav a { text-decoration: none; }
+.top nav a:hover { color: var(--ink); }
+@media (max-width: 560px) { .top nav { display: none; } }
+
+/* Hero */
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 470px);
+  gap: 56px;
+  align-items: center;
+  padding-block: 40px 72px;
+}
+.hero h1 { font-size: clamp(2.4rem, 5.2vw, 4rem); line-height: 1.02; font-weight: 700; }
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero .lede { margin-top: 22px; font-size: 1.2rem; color: var(--muted); max-width: 30em; }
+.cta { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 18px; margin-top: 34px; }
+.button {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 13px 20px; border-radius: 10px;
+  background: var(--ink); color: var(--ground);
+  font: 600 1rem/1 var(--body); border: 0;
+}
+.button { text-decoration: none; }
+.button:hover { opacity: 0.88; }
+.button small { font: 500 0.72rem/1 var(--data); letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.7; }
+.cta .note { font-size: 0.95rem; color: var(--muted); flex-basis: 100%; }
+.source {
+  display: inline-flex; align-items: center;
+  padding: 12px 18px; border-radius: 10px;
+  border: 1px solid var(--line); color: var(--ink);
+  font: 600 1rem/1 var(--body); text-decoration: none;
+}
+.source:hover { border-color: var(--muted); }
+@media (max-width: 860px) {
+  .hero { grid-template-columns: minmax(0, 1fr); gap: 40px; padding-block: 16px 56px; }
+}
+
+/* The desktop strip: a menu bar with the real item, and the popover below it */
+.desk {
+  position: relative;
+  border-radius: 16px;
+  background: linear-gradient(160deg, var(--desk-a), var(--desk-b));
+  padding: 0 0 28px;
+  overflow: hidden;
+  box-shadow: 0 1px 0 var(--line) inset;
+}
+.menubar {
+  display: flex; justify-content: flex-end; align-items: center; gap: 18px;
+  height: 30px; padding-inline: 16px;
+  background: var(--menubar);
+  backdrop-filter: blur(12px);
+  font: 500 0.82rem/1 var(--body);
+  color: var(--menubar-ink);
+}
+.menubar .item { display: flex; align-items: center; gap: 5px; padding: 3px 7px; border-radius: 5px; }
+.menubar .item.open { background: color-mix(in srgb, var(--menubar-ink) 14%, transparent); }
+.menubar .glyph {
+  width: 14px; height: 14px; background: var(--menubar-ink);
+  -webkit-mask: url("images/menubar-icon.png") center / contain no-repeat;
+  mask: url("images/menubar-icon.png") center / contain no-repeat;
+}
+.menubar .clock, .menubar .value { font-variant-numeric: tabular-nums; }
+.popover {
+  width: min(300px, 78%);
+  margin: 8px 58px 0 auto;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 0 0 0.5px var(--line), 0 18px 40px var(--shadow);
+  background: var(--panel);
+}
+.popover img { width: 100%; }
+@media (max-width: 480px) { .popover { margin-right: 20px; } }
+
+/* Window */
+.window-section { padding-block: 24px 88px; }
+.window {
+  max-width: 900px; margin: 0 auto;
+  border-radius: 14px; overflow: hidden;
+  background: var(--panel);
+  box-shadow: 0 0 0 0.5px var(--line), 0 30px 70px var(--shadow);
+}
+.window .bar { display: flex; gap: 8px; padding: 16px 18px 0; }
+.window .bar span { width: 12px; height: 12px; border-radius: 50%; background: var(--line); }
+.window img { width: 100%; }
+.caption { max-width: 900px; margin: 20px auto 0; color: var(--muted); font-size: 0.95rem; text-align: center; }
+
+/* Sections */
+section { padding-block: 72px; border-top: 1px solid var(--line); }
+.section-head { display: grid; gap: 14px; max-width: 40rem; margin-bottom: 44px; }
+.section-head h2 { font-size: clamp(1.8rem, 3.4vw, 2.5rem); line-height: 1.1; font-weight: 700; }
+.section-head p { color: var(--muted); font-size: 1.1rem; }
+
+/* The three numbers */
+.numbers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; }
+.number { display: grid; gap: 10px; align-content: start; }
+.number .figure { font: 700 clamp(1.7rem, 3vw, 2.2rem)/1.1 var(--display); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.number .figure.good { color: var(--good); }
+.number h3 { font: 600 1.05rem/1.3 var(--body); letter-spacing: 0; }
+.number p { color: var(--muted); }
+@media (max-width: 760px) { .numbers { grid-template-columns: minmax(0, 1fr); gap: 32px; } }
+
+/* A few points instead of paragraphs */
+.points { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 56px; }
+.points li { display: flex; gap: 12px; align-items: baseline; min-width: 0; }
+.points li::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); transform: translateY(-2px); }
+@media (max-width: 760px) { .points { grid-template-columns: minmax(0, 1fr); } }
+
+footer { border-top: 1px solid var(--line); padding-block: 36px 48px; color: var(--muted); font-size: 0.9rem; }
+footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 32px; }
+footer p { max-width: 40rem; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="#top" id="top">
+      <img src="images/app-icon.png" alt="" width="30" height="30">
+      Hello Codex
+    </a>
+    <nav aria-label="Sections">
+      <a href="https://github.com/hanlogy/hellocodex">GitHub</a>
+    </nav>
+  </header>
+
+  <div class="hero">
+    <div>
+      <h1>Know if your Codex week will <em>last</em>.</h1>
+      <p class="lede">Hello Codex lives in your Mac’s menu bar. It shows how much of your Codex weekly limit is left, how the week is going, and whether it will last until the reset.</p>
+      <div class="cta">
+        <a class="button" id="download" href="https://github.com/hanlogy/hellocodex/releases/latest/download/Hello-Codex.dmg">Download for Mac <small>1.0</small></a>
+        <a class="source" href="https://github.com/hanlogy/hellocodex/releases">All releases</a>
+        <span class="note">Free · macOS 14 or later</span>
+      </div>
+    </div>
+
+    <div class="desk" aria-label="The Hello Codex menu bar item, open">
+      <div class="menubar">
+        <span class="item open"><span class="glyph" aria-hidden="true"></span><span class="value">72% (−1%)</span></span>
+        <span class="clock">Wed 30 Sep 09:10</span>
+      </div>
+      <div class="popover">
+        <img class="shot-light" src="images/popover-light.png" alt="The Hello Codex popover: 72% left this week, 3d 10h until reset, a small chart of the week, and the stats Today −1%, Versus even pace +23 pts, At this pace Lasts to reset." width="300" height="313">
+        <img class="shot-dark" src="images/popover-dark.png" alt="The Hello Codex popover in dark mode: 72% left this week, 3d 10h until reset." width="300" height="313">
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="window-section">
+  <div class="wrap">
+    <div class="window">
+      <div class="bar" aria-hidden="true"><span></span><span></span><span></span></div>
+      <img class="shot-light" src="images/window-light.png" alt="The Hello Codex window: 72% left this week, 3d 10h until reset on Sat 3 Oct at 19:10, a chart of the week with the recorded readings, an even pace line and a projection, the stats, and the usage for each day." width="760" height="687">
+      <img class="shot-dark" src="images/window-dark.png" alt="The Hello Codex window in dark mode, showing the same week." width="760" height="687">
+    </div>
+    <p class="caption">The main window, with example data.</p>
+  </div>
+</div>
+
+<div class="wrap">
+  <section id="numbers">
+    <div class="section-head">
+      <span class="eyebrow">What it shows</span>
+      <h2>Three numbers tell you how the week is going.</h2>
+    </div>
+    <div class="numbers">
+      <div class="number">
+        <span class="figure">72%</span>
+        <h3>Left this week</h3>
+        <p>In the menu bar, with what today used: 72% (−1%).</p>
+      </div>
+      <div class="number">
+        <span class="figure">+23 pts</span>
+        <h3>Versus even pace</h3>
+        <p>Ahead of or behind an even pace over the 7 days.</p>
+      </div>
+      <div class="number">
+        <span class="figure good">Lasts to reset</span>
+        <h3>At this pace</h3>
+        <p>Or the day and time it runs out.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="details">
+    <ul class="points">
+      <li>macOS 14 or later, with Codex installed and signed in.</li>
+      <li>Read only: it never runs tasks or changes Codex’s settings.</li>
+      <li>Your readings stay on your Mac.</li>
+      <li>No account, no analytics, nothing sent anywhere.</li>
+    </ul>
+  </section>
+</div>
+
+<footer>
+  <div class="wrap">
+    <p>© 2026 Hanlogy AB · <a href="https://github.com/hanlogy/hellocodex">GitHub</a></p>
+    <p>Hello Codex is an independent app and is not affiliated with or endorsed by OpenAI. Codex is a trademark of OpenAI.</p>
+  </div>
+</footer>
+</body>
+</html>
